@@ -1,3 +1,35 @@
+## Builds and returns a data frame with the proper information contained in it.
+## data: is the data frame object we are returning
+## directory: string representing the dir we need to iterate through
+## id: vector containging the desired monitors
+populateDataFrame <- function(data, directory, id) {
+  slash <- "/"
+  fileExt <- ".csv"
+  newID <- ""
+  
+  # Need to build my own path since I don't want to consume an entire list
+  # of files in the directory.
+  for (counter in seq_along(id)) {
+    if (id[counter] <= 9) {
+      newID <- paste("00", id[counter], sep="")
+    } 
+    else if (id[counter] >= 10 & id[counter] <= 99) {
+      newID <- paste("0", id[counter], sep="")
+    } 
+    else {
+      newID <- id[counter]
+    }
+    
+    fileInfo <- paste(".", slash, directory, slash, newID, fileExt, sep = "")
+    
+    # Only bind to data frame if the monitor is in the list.
+    # This reduces time and space complexities
+    data <- rbind(data, read.csv(fileInfo, comment.char = ""))
+  }
+  # return the data
+  data
+}
+
 ## 'pollutantMean' calculates the mean of a pollutant (sulfate or nitrate) 
 ## across a specified list of monitors. The function 'pollutantmean' takes 
 ## three arguments: 'directory', 'pollutant', and 'id'. Given a vector monitor 
@@ -19,50 +51,17 @@
 ## Returns the non-rounded mean of the pollutant across all monitors list
 ## in the 'id' vector (ignoring NA values)
 ## 
-pollutantMean <- function(directory, pollutant, id = 1:332) {
-  
-  slash <- "/"
-  fileExt <- ".csv"
-  newID <- ""
-  if (id <= 9) {
-    newID <- paste("00", id, sep="")
-  }
-  
-  print(newID)
-  
-  fileInfo <- paste(".", slash, directory, slash, newID, fileExt, sep = "")
-  print(fileInfo)
-  
-  pollutantData <- read.csv(file=fileInfo, header=TRUE, sep=",")
-  ##print(pollutantData)
-  
-  numberOfRows = nrow(pollutantData)
-  
-  switch(pollutant,
-         sulfate = {
-           
-         },
-         nitrate = {
-           
-         },
-         {
-           print("Wrong Parameter for pollutant " + pollutant)
-         }
-         )
-  
-  
-}
-
-pollutantmean2 <- function(directory, pollutant, id = 1:332) {
+pollutantmean <- function(directory, pollutant, id = 1:332) {
   data <- data.frame();
-  files <- list.files(directory, full.names = TRUE);
+  data <- populateDataFrame(data, directory, id)
   
-  for (index in files) {
-    data <- rbind(data, read.csv(index, comment.char = ""))
-  }
-  
+  # obtaining the desired monitors from the data frame
   neededMonitors <- subset(data, ID %in% id);
+  
+  # calculatin the mean values of the desired column/pollutant while removing
+  # all unwanted values (e.g. NA)
   pollutantMean <- mean(neededMonitors[[pollutant]], na.rm = TRUE);
+  
+  # returning the mean value
   pollutantMean;
 }
-
